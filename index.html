@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>MOLTENTIC Portfolio</title>
   <link rel="stylesheet" href="style.css" />
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600&family=Montserrat:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet">
 
   <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
 
@@ -46,8 +46,8 @@
       width: 30px;
       height: 30px;
       border-radius: 50%;
-      background: radial-gradient(circle, #fff, #87cefa, #000);
-      box-shadow: 0 0 15px #87cefa, 0 0 25px #fff;
+      background: radial-gradient(circle, #fff, #ffcc7a, #0b0b0f);
+      box-shadow: 0 0 15px rgba(255, 204, 122, 0.6), 0 0 25px rgba(255, 255, 255, 0.4);
       transform: translate(-50%, -50%);
       z-index: 9999;
       transition: transform 0.1s ease-out;
@@ -101,8 +101,13 @@
 
   <section id="hero" class="section hero">
     <div class="hero-text">
+      <div class="hero-badge">MOLTENTIC • 3D Artist & Builder</div>
       <h2>Molten Creativity, Solid Design</h2>
       <p>Scroll down to explore my 3D models and builds.</p>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="#models">Explore Models</a>
+        <a class="btn btn-ghost" href="#pricing">View Pricing</a>
+      </div>
     </div>
   </section>
 
@@ -113,17 +118,17 @@
 
   <div class="performance-container">
 
-    <div class="performance-item big-stat">
+    <div class="performance-item big-stat tilt-card" data-depth="1.2">
       <h3 class="performance-number">75+</h3>
       <p class="performance-label">Projects Completed</p>
     </div>
 
-    <div class="performance-item big-stat">
+    <div class="performance-item big-stat tilt-card" data-depth="1.2">
       <h3 class="performance-number">4.8 ⭐</h3>
       <p class="performance-label">Rodevs Rating</p>
     </div>
 
-    <div class="performance-item big-stat">
+    <div class="performance-item big-stat tilt-card" data-depth="1.2">
       <h3 class="performance-number">2+ Years</h3>
       <p class="performance-label">Experience</p>
     </div>
@@ -134,7 +139,8 @@
 
   <section id="models" class="section">
     <h2 class="section-title">Models</h2>
-    <div class="model-stage" id="model-stage">
+    <div class="model-stage tilt-card" id="model-stage" data-depth="1.35">
+      <div class="stage-light" aria-hidden="true"></div>
       <button class="nav-arrow left" id="prevModel" aria-label="Previous model">‹</button>
       <model-viewer
         id="active-model"
@@ -173,7 +179,7 @@
   <div class="pricing-big-container">
 
 
-    <div class="pricing-big-box">
+    <div class="pricing-big-box tilt-card" data-depth="1.3">
       <h3 class="pricing-big-title">Standard</h3>
 
       <div class="pricing-big-amount">
@@ -187,7 +193,7 @@
     </div>
 
     <!-- Full Time Box -->
-    <div class="pricing-big-box">
+    <div class="pricing-big-box tilt-card" data-depth="1.3">
       <h3 class="pricing-big-title">Full Time</h3>
 
       <div class="pricing-big-amount">
@@ -208,7 +214,7 @@
   
   <section id="about" class="section about-section">
     <h2 class="section-title">About</h2>
-    <div class="about-card">
+    <div class="about-card tilt-card" data-depth="1.15">
       <img src="images/SillyMol.jpg" alt="MOLTENTIC" class="about-img">
       <div class="about-text">
         <h3>About Me</h3>
@@ -230,7 +236,7 @@
 
   <section id="socials" class="section socials-section">
     <h2 class="section-title">Socials</h2>
-    <div class="socials-card">
+    <div class="socials-card tilt-card" data-depth="1.05">
       <p class="socials-intro">Follow me and stay updated with my latest creations!</p>
       <ul class="social-links">
         <li>🎵 <a href="https://www.tiktok.com/@moltentic" target="_blank">TikTok</a></li>
@@ -306,4 +312,6 @@ document.addEventListener('click', e => {
 
 
 </body>
+</html>
+
 </html>
