@@ -58,6 +58,27 @@ document.addEventListener("DOMContentLoaded", () => {
   drawParticles();
 
   /* =========================
+     SECTION TITLES — Glow sweep on reveal
+     ========================= */
+  const titleEls = document.querySelectorAll(".section-title");
+  const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  if (titleEls.length && !prefersReducedMotion) {
+    const titleObserver = new IntersectionObserver(
+      (entries, observer) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          entry.target.classList.add("glow-sweep");
+          observer.unobserve(entry.target);
+        });
+      },
+      { threshold: 0.45 }
+    );
+
+    titleEls.forEach((title) => titleObserver.observe(title));
+  }
+
+  /* =========================
      MODELS — Carousel with fade + slide
      ========================= */
   const MODELS = window.MOLTENTIC_MODELS || [];
@@ -119,6 +140,32 @@ document.addEventListener("DOMContentLoaded", () => {
     }, 300);
   }
 
+  /* =========================
+     MODEL STAGE — Cursor-following light
+     ========================= */
+  const modelStage = document.getElementById("model-stage");
+  if (modelStage && !prefersReducedMotion) {
+    const setStageLight = (x, y) => {
+      const clampedX = Math.min(100, Math.max(0, x));
+      const clampedY = Math.min(100, Math.max(0, y));
+      modelStage.style.setProperty("--light-x", `${clampedX}%`);
+      modelStage.style.setProperty("--light-y", `${clampedY}%`);
+    };
+
+    setStageLight(50, 35);
+
+    modelStage.addEventListener("mousemove", (e) => {
+      const rect = modelStage.getBoundingClientRect();
+      const x = ((e.clientX - rect.left) / rect.width) * 100;
+      const y = ((e.clientY - rect.top) / rect.height) * 100;
+      setStageLight(x, y);
+    });
+
+    modelStage.addEventListener("mouseleave", () => {
+      setStageLight(50, 35);
+    });
+  }
+
   if (prevBtn) {
     prevBtn.addEventListener("click", () => {
       if (isAnimating) return; // guard
@@ -160,12 +207,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
   let currentIndex = 0;
   let isSwitching = false; // lock
+  let lastThumbRect = null;
 
   // Create build cards dynamically
   if (buildsEl) {
     BUILDS.forEach((b, i) => {
       const card = document.createElement("div");
-      card.className = "build-card";
+      card.className = "build-card tilt-card";
+      card.dataset.depth = "1.1";
       card.innerHTML = `
         <img src="${b.img}" alt="${b.title}">
         <div class="info">
@@ -177,8 +226,10 @@ document.addEventListener("DOMContentLoaded", () => {
       // Open lightbox on click
       card.addEventListener("click", () => {
         currentIndex = i;
-        showImage();
         if (lightbox) lightbox.classList.add("active");
+        const thumb = card.querySelector("img");
+        lastThumbRect = thumb ? thumb.getBoundingClientRect() : null;
+        showImage(true);
       });
 
       buildsEl.appendChild(card);
@@ -186,7 +237,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // Function to display image in lightbox with captions
-  function showImage() {
+  function showImage(animateFromThumb = false) {
     if (isSwitching) return; // guard
     if (!lightboxImg) return;
     const build = BUILDS[currentIndex];
@@ -196,6 +247,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // fade out image
     lightboxImg.classList.remove("visible");
+    lightboxImg.style.transform = "translate(0, 0) scale(1)";
     if (captionTitle && captionDesc) {
       // reset caption for re-entrance animation
       const cap = document.getElementById("lightbox-caption");
@@ -207,17 +259,27 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     setTimeout(() => {
-      // swap image
-      lightboxImg.src = build.img;
-      lightboxImg.alt = build.title;
-
       // update captions
       if (captionTitle) captionTitle.textContent = build.title;
       if (captionDesc) captionDesc.textContent = build.description;
 
-      // fade in image + animate caption
       lightboxImg.onload = () => {
+        const zoomFromThumb = animateFromThumb && lastThumbRect;
         lightboxImg.classList.add("visible");
+
+        if (zoomFromThumb) {
+          const targetRect = lightboxImg.getBoundingClientRect();
+          const scaleX = lastThumbRect.width / targetRect.width;
+          const scaleY = lastThumbRect.height / targetRect.height;
+          const translateX = lastThumbRect.left - targetRect.left;
+          const translateY = lastThumbRect.top - targetRect.top;
+
+          lightboxImg.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scaleX}, ${scaleY})`;
+          requestAnimationFrame(() => {
+            lightboxImg.style.transform = "translate(0, 0) scale(1)";
+          });
+        }
+
         const cap = document.getElementById("lightbox-caption");
         if (cap) {
           // retrigger pulse
@@ -227,8 +289,12 @@ document.addEventListener("DOMContentLoaded", () => {
           cap.classList.add("pulse");
         }
         // release lock a moment after visible to prevent stacking
-        setTimeout(() => { isSwitching = false; }, 350);
+        setTimeout(() => { isSwitching = false; }, 500);
       };
+
+      // swap image
+      lightboxImg.src = build.img;
+      lightboxImg.alt = build.title;
     }, 150);
   }
 
@@ -237,7 +303,7 @@ document.addEventListener("DOMContentLoaded", () => {
     lightboxRight.addEventListener("click", () => {
       if (isSwitching) return; // guard
       currentIndex = (currentIndex + 1) % BUILDS.length;
-      showImage();
+      showImage(false);
     });
   }
 
@@ -245,7 +311,7 @@ document.addEventListener("DOMContentLoaded", () => {
     lightboxLeft.addEventListener("click", () => {
       if (isSwitching) return; // guard
       currentIndex = (currentIndex - 1 + BUILDS.length) % BUILDS.length;
-      showImage();
+      showImage(false);
     });
   }
 
@@ -253,6 +319,7 @@ document.addEventListener("DOMContentLoaded", () => {
   if (lightboxClose) {
     lightboxClose.addEventListener("click", () => {
       lightbox && lightbox.classList.remove("active");
+      lastThumbRect = null;
     });
   }
 
@@ -260,6 +327,7 @@ document.addEventListener("DOMContentLoaded", () => {
     lightbox.addEventListener("click", (e) => {
       if (e.target === lightbox) {
         lightbox.classList.remove("active");
+        lastThumbRect = null;
       }
     });
   }
@@ -286,6 +354,35 @@ document.addEventListener("DOMContentLoaded", () => {
         break;
     }
   });
+
+  /* =========================
+     PRICING — Staggered reveal
+     ========================= */
+  const pricingCards = document.querySelectorAll(".pricing-big-box");
+  if (pricingCards.length) {
+    if (prefersReducedMotion) {
+      pricingCards.forEach((card) => card.classList.add("in-view"));
+    } else {
+      const pricingObserver = new IntersectionObserver(
+        (entries, observer) => {
+          entries.forEach((entry) => {
+            if (!entry.isIntersecting) return;
+            entry.target.classList.add("in-view");
+            observer.unobserve(entry.target);
+            setTimeout(() => {
+              entry.target.style.transitionDelay = "0ms";
+            }, 700);
+          });
+        },
+        { threshold: 0.25 }
+      );
+
+      pricingCards.forEach((card, idx) => {
+        card.style.transitionDelay = `${idx * 140}ms`;
+        pricingObserver.observe(card);
+      });
+    }
+  }
 });
 
 
@@ -293,40 +390,50 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
 (function () {
-  const cards = document.querySelectorAll('.holo-card');
+  const cards = document.querySelectorAll(".tilt-card");
+  if (!cards.length) return;
 
-  function onMove(e, card) {
+  function tiltFor(card, e) {
     const rect = card.getBoundingClientRect();
-    const px = ((e.touches ? e.touches[0].clientX : e.clientX) - rect.left) / rect.width;
-    const py = ((e.touches ? e.touches[0].clientY : e.clientY) - rect.top) / rect.height;
-    const rotateY = (px - 0.5) * 16 * (card.dataset.depth ? parseFloat(card.dataset.depth) : 1);
-    const rotateX = (0.5 - py) * 12 * (card.dataset.depth ? parseFloat(card.dataset.depth) : 1);
-    card.style.transform = `perspective(900px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateZ(0)`;
-    // subtle inner parallax: nudge background sweep
-    const sweep = card.querySelector('.holo-card::before');
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    const px = (clientX - rect.left) / rect.width;
+    const py = (clientY - rect.top) / rect.height;
+    const depth = card.dataset.depth ? parseFloat(card.dataset.depth) : 1;
+    const rotateY = (px - 0.5) * 16 * depth;
+    const rotateX = (0.5 - py) * 12 * depth;
+    card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
   }
 
   function reset(card) {
-    card.style.transform = '';
+    card.style.transition = "transform 450ms ease";
+    card.style.transform = "perspective(1000px) rotateX(0deg) rotateY(0deg)";
   }
 
-  cards.forEach(card => {
-    // mouse move
-    card.addEventListener('mousemove', (e) => onMove(e, card));
-    card.addEventListener('mouseleave', () => reset(card));
-    // touch
-    card.addEventListener('touchmove', (e) => { onMove(e, card); }, {passive:true});
-    card.addEventListener('touchend', () => reset(card));
-    // keyboard accessibility: simulate hover with focus
-    card.addEventListener('focus', () => card.classList.add('focused'));
-    card.addEventListener('blur', () => card.classList.remove('focused'));
+  cards.forEach((card) => {
+    let rafId = null;
+    card.style.transition = "transform 120ms ease-out";
+
+    const onMove = (e) => {
+      if (rafId) cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(() => tiltFor(card, e));
+    };
+
+    card.addEventListener("mouseenter", () => {
+      card.style.transition = "transform 120ms ease-out";
+    });
+    card.addEventListener("mousemove", onMove);
+    card.addEventListener("mouseleave", () => reset(card));
+    card.addEventListener("touchmove", onMove, { passive: true });
+    card.addEventListener("touchend", () => reset(card));
   });
 
-  // reduce motion respect
-  const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
   if (mq.matches) {
-    cards.forEach(c => {
-      c.style.transition = 'none';
+    cards.forEach((card) => {
+      card.style.transition = "none";
+      card.style.transform = "none";
     });
   }
 })();
+
